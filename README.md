@@ -8,7 +8,8 @@ Using the package manager(pip), you can install this package from the git as sho
 Run this command in your home directory for installation.
 
 ``` 
-pip3.7 install git+https://bitbucket.org/aa-scm-admin/misc.git@new-package#subdirectory=parquet_to_athena
+pip3.7 install git+https://github.com/affinityanswers/schema_from_parquet.git
+
 ```
 
 ## Usage
