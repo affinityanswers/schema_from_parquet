@@ -1,0 +1,8 @@
+{
+    "file_path": "s3://bucket/sample.parquet",
+    "location": "s3://bucket/output/",
+    "database": "test",
+    "table": "test_table",
+    "partition": {"COL": "DATE"},
+    "create_table": "s3://bucket/staging"
+}
