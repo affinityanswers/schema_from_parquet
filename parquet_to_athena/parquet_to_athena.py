@@ -7,7 +7,13 @@ import json
 from argparse import ArgumentParser
 s3 = s3fs.S3FileSystem()
 
-DATA_TYPE = {"STRING": "STRING", "INT32": "INTEGER", "INT64": "INTEGER"}
+DATA_TYPE = {
+    "string": "string",
+    "int32": "int",
+    "int64": "bigint",
+    "double": "double",
+    "bool": "boolean"
+}
 CREATE_TABLE_QUERY = """
 CREATE EXTERNAL TABLE {}.{} (
 {}
@@ -59,22 +65,20 @@ def parquet_to_athena(file_path, location, database,  table, partition, create_t
     dataframe = pq.ParquetDataset(file_path, filesystem=s3)
     column_str = ''
     for col in range(len(dataframe.schema)):
-        name = (dataframe.schema[col].name).lower()
-        physical_col_type = dataframe.schema[col].physical_type
-        logical_col_type = dataframe.schema[col].logical_type.type
-        if not logical_col_type=="NONE":
-            if logical_col_type=="DECIMAL":
-                precision = dataframe.schema[col].precision
-                scale = dataframe.schema[col].scale
-                dtype = f"{logical_col_type}({precision}, {scale})"
-            else:
-                dtype = DATA_TYPE[logical_col_type]
+        field = dataframe.schema.field(col)
+
+        if str(field.type).startswith('list'):
+            value_dtype = DATA_TYPE[field.type.value_type]
+            dtype = f"array<{value_dtype}>"
+        elif field.type in DATA_TYPE:
+            dtype = DATA_TYPE[field.type]
         else:
-            dtype = DATA_TYPE[physical_col_type]
+            raise Exception("Unknown field type", field.type, field)
+
         if col == len(dataframe.schema)-1:
-            column_str += f"{name} {dtype}"
+            column_str += f"{field.name.lower()} {dtype}"
         else:
-            column_str += f"{name} {dtype},\n"
+            column_str += f"{field.name.lower()} {dtype},\n"
 
     query = CREATE_TABLE_QUERY.format(database, table, column_str, location)
     if partition:
